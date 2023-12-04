@@ -19,11 +19,8 @@ dependency "datasources" {
 }
 
 inputs = {
-  nat_gateway_enabled = true
-  single_nat_gateway  = true
-
   vpc_cidr           = "10.0.0.0/16"
   availability_zones = slice(dependency.datasources.outputs.availability_zones, 0, 3)
-  public_subnets  = [for k, v in slice(dependency.datasources.outputs.availability_zones, 0, 3) : cidrsubnet("10.0.0.0/16", 8, k + 48)]
-  private_subnets = [for k, v in slice(dependency.datasources.outputs.availability_zones, 0, 3) : cidrsubnet("10.0.0.0/16", 8, k)]
+  public_subnets     = [for k, v in slice(dependency.datasources.outputs.availability_zones, 0, 3) : cidrsubnet("10.0.0.0/16", 8, k + 48)]
+  private_subnets    = [for k, v in slice(dependency.datasources.outputs.availability_zones, 0, 3) : cidrsubnet("10.0.0.0/16", 8, k)]
 }

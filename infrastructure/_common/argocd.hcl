@@ -1,5 +1,7 @@
 terraform {
-  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/tf-aws-eks-cluster.git?ref=master"
+  # Pull the terraform configuration at the github repo "kubernetes-helm-chart", under the subdirectory "modules/cicd/argocd", using the git branch "develop".
+  #source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/cicd/argocd?ref=develop"
+  source = "/Users/yuriifurko/Documents/Cloud/k8s/kubernetes-helm-chart/modules/cicd/argocd"
 }
 
 locals {
@@ -14,22 +16,4 @@ locals {
   region       = local.region_vars.locals.region
 }
 
-inputs = {
-  eks_version        = "1.26"
-  eks_addons_enabled = false
-
-  eks_service_ipv4_cidr = "172.20.0.0/16"
-
-  eks_encryption_config_enabled = false
-
-  endpoint_public_access  = true
-  endpoint_private_access = false
-
-  public_access_cidrs = [
-    "0.0.0.0/0",
-  ]
-
-  tags = {
-    "kubernetes.io/cluster/${local.project_name}-${local.environment}" = "owned"
-  }
-}
+inputs = {}

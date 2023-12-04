@@ -8,7 +8,7 @@ include "eks_cluster" {
 }
 
 dependency "vpc_network" {
-  config_path  = "${get_terragrunt_dir()}/../vpc-network"
+  config_path = "${get_terragrunt_dir()}/../vpc-network"
 
   mock_outputs = {
     vpc_id         = "vpc-00000000"

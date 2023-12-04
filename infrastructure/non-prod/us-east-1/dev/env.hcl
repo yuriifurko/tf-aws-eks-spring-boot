@@ -2,6 +2,6 @@
 # feed forward to the child modules.
 
 locals {
-  project_name = "hello-word"
+  project_name = "hello-world"
   environment  = "dev"
 }

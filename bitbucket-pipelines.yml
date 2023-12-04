@@ -1,0 +1,19 @@
+pipelines:
+  default:
+    - parallel:
+      - step:
+          name: Terraform Init
+          image: hashicorp/terraform
+          script:
+            - terraform init --upgrade && terraform validate
+
+      - step:
+          name: Terraform fmt
+          image: hashicorp/terraform
+          script:
+            - terraform fmt -recursive -check
+
+      - step:
+          name: Security Scan
+          script:
+            - pipe: atlassian/git-secrets-scan:0.5.1

@@ -1,0 +1,87 @@
+include "root" {
+  path = find_in_parent_folders()
+}
+
+include "aws_load_balancer_controller" {
+  path   = "${dirname(find_in_parent_folders())}/_common/aws-lb-ingress-controller.hcl"
+  expose = true
+}
+
+dependency "datasources" {
+  config_path = "${get_terragrunt_dir()}/../../data-sources"
+  mock_outputs = {
+    region = "us-east-0"
+    availability_zones = [
+      "us-east1-a",
+      "us-east1-b",
+      "us-east1-c"
+    ]
+  }
+}
+
+dependency "vpc_network" {
+  config_path = "${get_terragrunt_dir()}/../../vpc-network"
+
+  mock_outputs = {
+    vpc_id         = "vpc-00000000"
+    vpc_cidr_block = "0.0.0.0/0"
+    vpc_public_subnets_id = [
+      "subnet-00000000",
+      "subnet-00000001",
+      "subnet-00000002",
+    ]
+
+    vpc_private_subnets_id = [
+      "subnet-00000000",
+      "subnet-00000001",
+      "subnet-00000002",
+    ]
+  }
+}
+
+dependency "eks_cluster" {
+  config_path = "${get_terragrunt_dir()}/../../eks-cluster"
+}
+
+generate "eks_providers" {
+  path      = "eks_providers.tf"
+  if_exists = "overwrite_terragrunt"
+
+  contents = <<EOF
+    data "aws_eks_cluster" "eks_cluster" {
+      name = "${dependency.eks_cluster.outputs.eks_cluster_name}"
+    }
+
+    data "aws_eks_cluster_auth" "eks_cluster" {
+      name = "${dependency.eks_cluster.outputs.eks_cluster_name}"
+    }
+
+    provider "kubernetes" {
+      host                   = data.aws_eks_cluster.eks_cluster.endpoint
+      cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
+      token                  = data.aws_eks_cluster_auth.eks_cluster.token
+    }
+
+    provider "helm" {
+      kubernetes {
+        host                   = data.aws_eks_cluster.eks_cluster.endpoint
+        cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
+        token                  = data.aws_eks_cluster_auth.eks_cluster.token
+      }
+    }
+EOF
+}
+
+inputs = {
+  region = dependency.datasources.outputs.region
+  vpc_id = dependency.vpc_network.outputs.vpc_id
+
+  eks_cluster_name                     = dependency.eks_cluster.outputs.eks_cluster_name
+  eks_cluster_identity_oidc_issuer     = dependency.eks_cluster.outputs.eks_cluster_identity_oidc_issuer
+  eks_cluster_identity_oidc_issuer_arn = dependency.eks_cluster.outputs.eks_cluster_identity_oidc_issuer_arn
+
+  lb_subnets_ids     = dependency.vpc_network.outputs.vpc_public_subnets_id
+  lb_certeficate_arn = "arn:aws:acm:${dependency.datasources.outputs.region}:${dependency.datasources.outputs.account_id}:certificate/715ffc27-2870-4ac7-843b-826819fb6d31"
+
+  lb_ingress_enabled = true
+}

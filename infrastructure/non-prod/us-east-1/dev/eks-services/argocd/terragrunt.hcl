@@ -2,6 +2,11 @@ include "root" {
   path = find_in_parent_folders()
 }
 
+include "argocd" {
+  path   = "${dirname(find_in_parent_folders())}/_common/argocd.hcl"
+  expose = true
+}
+
 dependency "eks_cluster" {
   config_path = "${get_terragrunt_dir()}/../../eks-cluster"
 }
@@ -50,16 +55,32 @@ inputs = {
       yamlencode({
         server = {
           ingress = {
-            enabled          = false
-            ingressClassName = "nginx"
-            hosts            = []
-            paths            = ["/"]
-            tls = [
-              {
-                secretName = "argocd-tls"
-                hosts      = []
-              }
+            enabled          = true
+            ingressClassName = "alb"
+
+            # https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#aws-application-load-balancers-albs-and-classic-elb-http-mode
+            annotations = {
+              "kubernetes.io/ingress.class"                  = "alb"
+              "alb.ingress.kubernetes.io/load-balancer-name" = format("%v-lb-controller", dependency.eks_cluster.outputs.eks_cluster_name)
+              "alb.ingress.kubernetes.io/group.name"         = format("%v-lb-controller", dependency.eks_cluster.outputs.eks_cluster_name)
+              "alb.ingress.kubernetes.io/target-type"        = "ip"
+              "alb.ingress.kubernetes.io/scheme"             = "internet-facing"
+
+              "alb.ingress.kubernetes.io/healthcheck-path"     = "/healthz"
+              "alb.ingress.kubernetes.io/healthcheck-protocol" = "HTTPS"
+              "alb.ingress.kubernetes.io/success-codes"        = "200,400"
+
+              "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTPS = 443 }] )
+              "alb.ingress.kubernetes.io/backend-protocol" = "HTTPS"
+              #"alb.ingress.kubernetes.io/backend-protocol-version" = "HTTP2"
+            }
+
+            hosts = [
+              format("%v", "argocd.dev.awsworkshop.info")
             ]
+            pathType = "Prefix"
+            paths = ["/"]
+            tls   = []
           }
         }
       })

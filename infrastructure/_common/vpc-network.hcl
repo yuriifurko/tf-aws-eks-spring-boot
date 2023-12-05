@@ -15,18 +15,13 @@ locals {
 }
 
 inputs = {
-  # NAT
   nat_gateway_enabled = true
   single_nat_gateway  = true
 
-  # VPC Flow Log
   vpc_flow_logs_enabled         = false
   vpc_flow_log_destination_type = "s3"
 
-  # Internal Endpoints
   s3_endpoint_enabled = true
-
-  # Private DNS
   private_dns_enabled = false
 
   public_subnet_tags = {

@@ -2,8 +2,8 @@ include "root" {
   path = find_in_parent_folders()
 }
 
-include "aws_load_balancer_controller" {
-  path   = "${dirname(find_in_parent_folders())}/_common/aws-lb-ingress-controller.hcl"
+include "nginx_ingress_controller" {
+  path   = "${dirname(find_in_parent_folders())}/_common/nginx-ingress-controller.hcl"
   expose = true
 }
 
@@ -73,15 +73,25 @@ EOF
 }
 
 inputs = {
-  region = dependency.datasources.outputs.region
-  vpc_id = dependency.vpc_network.outputs.vpc_id
+  cert_manager_acme_email = "yurii.furko@gmail.com"
 
-  eks_cluster_name                     = dependency.eks_cluster.outputs.eks_cluster_name
-  eks_cluster_identity_oidc_issuer     = dependency.eks_cluster.outputs.eks_cluster_identity_oidc_issuer
-  eks_cluster_identity_oidc_issuer_arn = dependency.eks_cluster.outputs.eks_cluster_identity_oidc_issuer_arn
+  # required CRDs from kube-prometheus stack helm chart
+  monitoring_enabled = false
+  alerts_enabled     = false
 
-  lb_subnets_ids     = dependency.vpc_network.outputs.vpc_public_subnets_id
-  lb_certeficate_arn = "arn:aws:acm:${dependency.datasources.outputs.region}:${dependency.datasources.outputs.account_id}:certificate/715ffc27-2870-4ac7-843b-826819fb6d31"
+  lb_nginx_ingress_enabled = false
+  lb_subnets_ids           = dependency.vpc_network.outputs.vpc_public_subnets_id
+  lb_certeficate_arn       = "arn:aws:acm:${dependency.datasources.outputs.region}:${dependency.datasources.outputs.account_id}:certificate/715ffc27-2870-4ac7-843b-826819fb6d31"
 
-  lb_ingress_enabled = true
+  values = concat(
+    [
+      yamlencode({
+        controller = {
+          service = {
+            type = "ClusterIP"
+          }
+        }
+      })
+    ]
+  )
 }

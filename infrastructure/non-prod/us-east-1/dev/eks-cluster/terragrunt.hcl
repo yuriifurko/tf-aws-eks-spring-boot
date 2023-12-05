@@ -43,20 +43,20 @@ inputs = {
     }
   }
 
-  eks_managed_node_group_enabled = true
+  eks_managed_node_group_enabled = false
   eks_managed_node_groups = {
     "frontend" = {
-      enabled    = true
+      enabled    = false
       name       = "frontend"
       subnet_ids = dependency.vpc_network.outputs.vpc_private_subnets_id
 
-      instance_types = ["t3a.medium"]
+      instance_types = ["t3a.medium"] # limit 17 pods per node
       disk_type      = "gp2"
       disk_size      = 20
 
-      min_size     = 1
-      desired_size = 1
-      max_size     = 1
+      min_size     = 2
+      desired_size = 2
+      max_size     = 2
     },
     "backend" = {
       enabled    = false
@@ -73,18 +73,19 @@ inputs = {
     }
   }
 
-  self_managed_node_group_enabled = false
+  # required aws-auth module
+  self_managed_node_group_enabled = true
   self_managed_node_group = {
     name = "default"
 
     vpc_zone_identifier = dependency.vpc_network.outputs.vpc_private_subnets_id
 
-    instance_type = "t3a.small"
-    disk_type     = "gp2"
+    instance_type = "t3a.medium" # limit 110 pods per node
+    disk_type     = "gp3"
     disk_size     = 20
 
-    desired_capacity = 1
-    min_size         = 1
-    max_size         = 1
+    desired_capacity = 2
+    min_size         = 2
+    max_size         = 2
   }
 }

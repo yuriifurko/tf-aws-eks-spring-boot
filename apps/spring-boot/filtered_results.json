@@ -1,0 +1,25 @@
+{
+  "_links": {
+    "root": {
+      "href": "/"
+    },
+    "self": {
+      "href": "/scans/07e943cb-906c-4529-9930-990343ef0f85/findings"
+    },
+    "help": {
+      "href": "https://help.veracode.com/reader/tS9CaFwL4_lbIEWWomsJoA/ovfZGgu96UINQxIuTqRDwg"
+    }
+  },
+  "scan_id": "07e943cb-906c-4529-9930-990343ef0f85",
+  "scan_status": "SUCCESS",
+  "message": "Scan successful. Results size: 1503 bytes",
+  "modules": [
+    "custom-metrics-demo-0.0.1-SNAPSHOT.jar"
+  ],
+  "modules_count": 1,
+  "findings": [],
+  "selected_modules": [],
+  "pipeline_scan": "23.8.0-0",
+  "project_name": "spring-boot-metrics",
+  "dev_stage": "DEVELOPMENT"
+}

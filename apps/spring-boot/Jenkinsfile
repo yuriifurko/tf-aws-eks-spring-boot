@@ -1,0 +1,425 @@
+#!/usr/bin/env groovy
+
+import java.util.*
+import hudson.tasks.test.*
+import hudson.model.*
+import hudson.FilePath
+import groovy.json.*
+import groovy.lang.*
+import net.sf.json.*
+
+/*
+  Common env
+*/
+APP_NAME = "spring-boot"
+BITBUCKET_ORG = "yuriyfRnD"
+DOCKERHUB_REPOSITORY = "docker.io/yuriyf/spring-boot"
+ARGOCD_AUTH_PASSWORD = credentials('argocd_auth_password')
+
+def commonEnv() {
+  def branchName = "${env.BRANCH_NAME}"
+
+  if (branchName == 'master') {
+    AWS_ECR_URL  = '111.dkr.ecr.eu-central-1.amazonaws.com'
+    AWS_ECR_CRED = 'ecr:eu-central-1:111'
+  } else if (branchName == 'develop') {
+    AWS_ECR_URL  = '222.dkr.ecr.eu-central-1.amazonaws.com'
+    AWS_ECR_CRED = 'ecr:eu-central-1:222'
+  } else if (branchName == 'testing') {
+    AWS_ECR_URL  = '333.dkr.ecr.eu-central-1.amazonaws.com'
+    AWS_ECR_CRED = 'ecr:eu-central-1:333'
+  } else {
+    sh "Not found"
+  }
+}
+
+/*
+  Configure Slack Notification
+*/
+def notifyBuild(String buildStatus = 'STARTED') {
+  // build status of null means successful
+  buildStatus =  buildStatus ?: 'SUCCESSFUL'
+
+  // Default values
+  def colorName = 'RED'
+  def colorCode = 'danger'
+
+  def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}] (<${env.RUN_DISPLAY_URL}|Open>) (<${env.RUN_CHANGES_DISPLAY_URL}|  Changes>)'"
+
+  def title = "${env.JOB_NAME} Build: ${env.BUILD_NUMBER}"
+  def title_link = "${env.RUN_DISPLAY_URL}"
+
+  def branchName = sh(returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD')
+  def commit = sh(returnStdout: true, script:  'git rev-parse HEAD')
+  def author = sh(returnStdout: true, script:  "git --no-pager show -s --format='%an'").trim()
+  def message = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
+
+  // Override default values based on build status
+  if (buildStatus == 'STARTED') {
+    color = 'YELLOW'
+    colorCode = 'warning'
+  } else if (buildStatus == 'SUCCESSFUL') {
+    color = 'GREEN'
+    colorCode = 'good'
+  } else if (buildStatus == 'UNSTABLE') {
+    color = 'YELLOW'
+    colorCode = 'warning'
+  } else {
+    color = 'RED'
+    colorCode = 'danger'
+  }
+
+  // get test results for slack message
+  @NonCPS
+  def getTestSummary = { ->
+    def testResultAction = currentBuild.rawBuild.getAction(AbstractTestResultAction.class)
+    def summary = ""
+
+    if (testResultAction != null) {
+      def total = testResultAction.getTotalCount()
+      def failed = testResultAction.getFailCount()
+      def skipped = testResultAction.getSkipCount()
+
+      summary = "Test results:\n\t"
+      summary = summary + ("Passed: " + (total - failed - skipped))
+      summary = summary + (", Failed: " + failed + " ${testResultAction.failureDiffString}")
+      summary = summary + (", Skipped: " + skipped)
+    } else {
+      summary = "No tests found"
+    }
+    return summary
+  }
+
+  def testSummaryRaw = getTestSummary()
+  // format test summary as a code block
+  def testSummary = "${testSummaryRaw}"
+  println testSummary.toString()
+
+  JSONObject attachment = new JSONObject();
+  attachment.put('author',"jenkins");
+  attachment.put('author_link',"https://jenkins.com");
+  attachment.put('title', title.toString());
+  attachment.put('title_link',title_link.toString());
+  attachment.put('text', subject.toString());
+  attachment.put('fallback', "fallback message");
+  attachment.put('color',colorCode);
+  attachment.put('mrkdwn_in', ["fields"])
+
+  // JSONObject for branch
+  JSONObject branch = new JSONObject();
+  branch.put('title', 'Branch');
+  branch.put('value', branchName.toString());
+  branch.put('short', true);
+
+  // JSONObject for author
+  JSONObject commitAuthor = new JSONObject();
+  commitAuthor.put('title', 'Author');
+  commitAuthor.put('value', author.toString());
+  commitAuthor.put('short', true);
+
+  // JSONObject for branch
+  JSONObject commitMessage = new JSONObject();
+  commitMessage.put('title', 'Commit Message');
+  commitMessage.put('value', message.toString());
+  commitMessage.put('short', false);
+
+  // JSONObject for test results
+  JSONObject testResults = new JSONObject();
+  testResults.put('title', 'Test Summary')
+  testResults.put('value', testSummary.toString())
+  testResults.put('short', false)
+
+  // Summary
+  attachment.put(
+    'fields', [branch, commitAuthor, commitMessage, testResults]
+  );
+
+  JSONArray attachments = new JSONArray();
+  attachments.add(attachment);
+  println attachments.toString()
+
+  // Send notifications
+  slackSend (color: colorCode, message: subject, attachments: attachments.toString())
+}
+
+pipeline {
+  agent {
+    kubernetes {
+      yaml '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: maven
+    image: maven:latest
+    command:
+    - sleep
+    args:
+    - infinity
+    volumeMounts:
+    - name: m2-repository
+      mountPath: /root/.m2/repository
+    - name: dependency-check-cache
+      mountPath: /root/dependency-check-cache
+  - name: buildkit
+    image: moby/buildkit:master
+    command:
+    - cat
+    tty: true
+    resources:
+      requests:
+        cpu: "1"
+        memory: "1Gi"
+      limits:
+        cpu: "1"
+        memory: "1Gi"
+    securityContext:
+      privileged: true
+      runAsUser: 0
+      runAsGroup: 0
+      fsGroup: 0
+    volumeMounts:
+    - name: buildkit-sock
+      mountPath: /run/buildkit/buildkitd.sock
+    - name: buildkit-cache
+      mountPath: /tmp/buildkit
+    - name: docker-registry
+      mountPath: /root/.docker
+      readOnly: true
+  - name: argocd-cli
+    image: argoproj/argocd:v2.6.15
+    command:
+    - sleep
+    args:
+    - infinity
+    tty: true
+    securityContext:
+      privileged: true
+  volumes:
+  - name: m2-repository
+    hostPath:
+      path: /tmp/m2-repository
+  - name: dependency-check-cache
+    hostPath:
+      path: /tmp/dependency-check-cache
+  - name: buildkit-sock
+    hostPath:
+      path: /run/buildkit/buildkitd.sock
+  - name: buildkit-cache
+    hostPath:
+      path: /tmp/buildkit
+  - name: docker-registry
+    secret:
+      secretName: docker-registry
+      defaultMode: 0400
+      items:
+        - key: .dockerconfigjson
+          path: config.json
+'''
+      defaultContainer 'maven'
+    }
+  }
+
+  options {
+    disableConcurrentBuilds(abortPrevious: true)
+    buildDiscarder logRotator(artifactDaysToKeepStr: '5', artifactNumToKeepStr: '5', daysToKeepStr: '5', numToKeepStr: '5')
+  }
+
+  // This triggers automatic builds whenever new code is checked in within any of the branches, provided that it has been configured accordingly
+  // This can be useful if you want to prevent some long-running jobs (e.g. reports) starting because of every commit, but still want to run them periodic if SCM changes have occurred.
+  triggers {
+    pollSCM(
+      scmpoll_spec: 'H/5 * * * *', ignorePostCommitHooks: true
+    )
+  }
+
+  stages {
+    stage ("Check latest commit") {
+      steps {
+        // https://wiki.jenkins-ci.org/JENKINS/SCM-Skip-Plugin.html
+        // If your commit message contains [ci skip] or [skip ci], using any capitalization, the commit will be created but the pipeline will be skipped
+        scmSkip(deleteBuild: true, skipPattern:'.*\\[ci skip\\].*')
+
+        script {
+          sh "git config --global --add safe.directory ${WORKSPACE}"
+          if (sh(script: "git log -1 --pretty=%B | fgrep -ie '[skip ci]' -e '[ci skip]'", returnStatus: true) == 0) {
+            currentBuild.result = 'NOT_BUILT'
+            error 'Aborting because commit message contains [ci skip]'
+          }
+        }
+
+        echo "Get Env Variables"
+        commonEnv()
+        sh "printenv"
+        echo "${AWS_ECR_URL}"
+        echo "${AWS_ECR_CRED}"
+      }
+    }
+
+    stage('Maven Build') {
+      steps {
+        container('maven') {
+          echo "Building App"
+          sh """
+            mvn versions:set -DnewVersion=${BUILD_ID}-SNAPSHOT
+            mvn clean install -DskipTests
+          """
+          archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true, onlyIfSuccessful: true
+        }
+      }
+    }
+
+    stage('Maven Test') {
+      steps {
+        container('maven') {
+          echo "Testing App"
+          sh "mvn clean test"
+
+          echo "Publish Test Result Report"
+          junit(
+            testResults: '**/target/*-reports/TEST-*.xml',
+            allowEmptyResults : true
+          )
+
+          // echo "Publish Coverage Result Report"
+          // publishCoverage adapters: [istanbulCoberturaAdapter('cobertura-coverage.xml')],
+          //   sourceFileResolver: sourceFiles('NEVER_STORE'),
+          //   calculateDiffForChangeRequests: true
+        }
+      }
+    }
+
+    stage('OWASP Dependency-Check Vulnerabilities') {
+      // https://jeremylong.github.io/DependencyCheck/dependency-check-cli/arguments.html
+      steps {
+        dependencyCheck additionalArguments: """
+          -s './src'
+          -o './'
+          -f 'ALL'
+          --prettyPrint
+          --data '/root/dependency-check-cache'
+        """,
+        odcInstallation: 'OWASP Dependency-Check Vulnerabilities'
+        dependencyCheckPublisher pattern: 'dependency-check-report.xml'
+      }
+    }
+
+    stage('SonarQube Analysis') {
+      steps {
+        // https://www.jenkins.io/doc/pipeline/steps/credentials-binding/
+        withSonarQubeEnv (credentialsId: "sonarqube_access_token", installationName: "SonarQube") {
+          sh """
+            mvn sonar:sonar \
+              -Dsonar.projectName="${APP_NAME}" \
+              -Dsonar.projectKey="${APP_NAME}" \
+              -Dsonar.branch.name="${env.BRANCH_NAME}" \
+              -Dsonar.host.url=http://sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
+              -Dsonar.projectVersion=${env.BUILD_NUMBER} \
+              -Dsonar.dependencyCheck.htmlReportPath=dependency-check-report.html
+          """
+
+          echo "Publish code-coverage"
+          junit(
+            testResults: '**/target/*-reports/TEST-*.xml',
+            allowEmptyResults : true
+          )
+        }
+      }
+    }
+
+    stage("SonarQube Quality Gate") {
+      steps {
+        withSonarQubeEnv (credentialsId: "sonarqube_access_token", installationName: "SonarQube") {
+          script {
+            waitForQualityGate abortPipeline: true, credentialsId: "sonarqube_access_token"
+          }
+        }
+      }
+    }
+
+    // stage ("Dynamic Analysis - DAST with OWASP ZAP") {
+		// 	steps {
+    //     sh "docker run -t owasp/zap2docker-stable zap-baseline.py -t http://192.168.18.23:5000/ || true"
+    //   }
+    // }
+
+    stage("Build & Push Docker Container") {
+      steps {
+        container('buildkit') {
+          echo "Build Docker App"
+          sh """
+            wget https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/0.6.0/linux-amd64/docker-credential-ecr-login -O /usr/local/bin/docker-credential-ecr-login
+            chmod 755 /usr/local/bin/docker-credential-ecr-login
+          """
+
+          sh """
+            buildctl build \
+              --frontend dockerfile.v0 \
+              --local context=./docker \
+              --local dockerfile=./docker \
+              --export-cache type=local,dest=/tmp/buildkit/cache \
+              --import-cache type=local,src=/tmp/buildkit/cache \
+              --output type=image,name=${DOCKERHUB_REPOSITORY}:${BUILD_ID},push=true
+          """
+        }
+      }
+    }
+
+    stage ('Updating the Helm Chart version') {
+      steps {
+        withCredentials([string(credentialsId: 'bitbucket_access_token', variable: 'BITBUCKET_TOKEN')]) {
+          sh '''
+            sed -i "s/appVersion:.*$/appVersion: \\"${BUILD_ID}\\"/g" helm/Chart.yaml
+            cat helm/Chart.yaml
+          '''
+
+          sh """
+            git config --global user.email "notifications-noreply@bitbucket.org"
+            git config --global user.name "Yurii Furko"
+            git config --global --add safe.directory ${WORKSPACE}
+          """
+
+          sh """
+            git add helm/Chart.yaml
+            git commit -m "[ci skip] updated the container image tag to version ${BUILD_ID}"
+            git push https://x-token-auth:${BITBUCKET_TOKEN}@bitbucket.org/${BITBUCKET_ORG}/${APP_NAME}.git HEAD:${BRANCH_NAME}
+          """
+        }
+      }
+    }
+
+    stage("Upgrade ArgoCD") {
+      steps {
+        script {
+          if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != 'staging') {
+            echo 'Skip deploy. This is not master or staging'
+          } else {
+            container('argocd-cli') {
+              withCredentials([string(credentialsId: "argocd_auth_password", variable: 'ARGOCD_AUTH_PASSWORD')]) {
+                sh """
+                  ARGOCD_SERVER="argocd-server.argocd.svc.cluster.local"
+
+                  argocd login argocd-server.argocd.svc.cluster.local --grpc-web --insecure --username admin --password ${ARGOCD_AUTH_PASSWORD}
+
+                  argocd app list --grpc-web
+                """
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      notifyBuild(currentBuild.result)
+    }
+    unstable {
+      notifyBuild(currentBuild.result)
+    }
+    failure {
+      notifyBuild(currentBuild.result)
+    }
+  }
+}

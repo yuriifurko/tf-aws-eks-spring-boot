@@ -51,7 +51,9 @@ inputs = {
   })
 
   manage_registry_scanning_configuration = true
+
   registry_scan_type = "BASIC"
+
   registry_scan_rules = [
     {
       scan_frequency = "SCAN_ON_PUSH"

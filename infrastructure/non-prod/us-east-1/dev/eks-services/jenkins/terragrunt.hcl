@@ -46,11 +46,11 @@ EOF
 }
 
 inputs = {
-  github_access_token    = get_env("TF_VARgithub_access_token",     "github_access_token")
+  github_access_token    = get_env("TF_VARgithub_access_token", "github_access_token")
   bitbucket_access_token = get_env("TF_VAR_bitbucket_access_token", "bitbucket_access_token")
   sonarqube_access_token = get_env("TF_VAR_sonarqube_access_token", "sonarqube_access_token")
-  slack_access_token     = get_env("TF_VAR_slack_access_token",     "slack_access_token")
-  argocd_auth_password   = get_env("TF_VAR_argocd_auth_password",   "argocd_auth_password")
+  slack_access_token     = get_env("TF_VAR_slack_access_token", "slack_access_token")
+  argocd_auth_password   = get_env("TF_VAR_argocd_auth_password", "argocd_auth_password")
 
   jenkins_saml_enabled = false
 
@@ -62,7 +62,7 @@ inputs = {
 
 
           ingress = {
-            enabled = true
+            enabled          = true
             ingressClassName = "alb"
             annotations = {
               "alb.ingress.kubernetes.io/load-balancer-name" = format("%v-lb-controller", dependency.eks_cluster.outputs.eks_cluster_name)

@@ -1,5 +1,5 @@
 include "root" {
-  path = find_in_parent_folders()
+  path   = find_in_parent_folders()
   expose = true
 }
 
@@ -29,7 +29,7 @@ generate "eks_providers" {
   path      = "eks_providers.tf"
   if_exists = "overwrite_terragrunt"
 
-  contents  = <<EOF
+  contents = <<EOF
     data "aws_eks_cluster" "eks_cluster" {
       name = "${dependency.eks_cluster.outputs.eks_cluster_name}"
     }

@@ -36,6 +36,6 @@ EOF
 inputs = {
   docker_registry_username = get_env("TF_VAR_docker_registry_username", "docker_registry_username")
   docker_registry_password = get_env("TF_VAR_docker_registry_password", "docker_registry_password")
-  docker_registry_server   = get_env("TF_VAR_docker_registry_server",   "docker_registry_server")
-  docker_registry_email    = get_env("TF_VAR_docker_registry_email",    "docker_registry_email")
+  docker_registry_server   = get_env("TF_VAR_docker_registry_server", "docker_registry_server")
+  docker_registry_email    = get_env("TF_VAR_docker_registry_email", "docker_registry_email")
 }

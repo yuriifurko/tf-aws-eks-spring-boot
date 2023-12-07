@@ -48,8 +48,8 @@ EOF
 inputs = {
   argocd_slack_token = get_env("TF_VAR_argocd_slack_token", "argocd_slack_token")
 
-  auth0_domain        = get_env("TF_VAR_auth0_domain",        "auth0_domain")
-  auth0_client_id     = get_env("TF_VAR_auth0_client_id",     "auth0_client_id")
+  auth0_domain        = get_env("TF_VAR_auth0_domain", "auth0_domain")
+  auth0_client_id     = get_env("TF_VAR_auth0_client_id", "auth0_client_id")
   auth0_client_secret = get_env("TF_VAR_auth0_client_secret", "auth0_client_secret")
 
   # SSO
@@ -83,8 +83,8 @@ inputs = {
               format("%v", "argocd.${include.root.locals.environment}.${include.root.locals.domain_name}")
             ]
             pathType = "Prefix"
-            paths = ["/"]
-            tls   = []
+            paths    = ["/"]
+            tls      = []
           }
         }
       })

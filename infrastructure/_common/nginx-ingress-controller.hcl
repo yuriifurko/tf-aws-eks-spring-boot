@@ -1,7 +1,5 @@
 terraform {
-  # Pull the terraform configuration at the github repo "kubernetes-helm-chart", under the subdirectory "modules/cicd/argocd", using the git branch "develop".
-  #source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/cicd/argocd?ref=develop"
-  source = "/Users/yuriifurko/Documents/Cloud/k8s/kubernetes-helm-chart/modules/ingress-controller/nginx"
+  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/ingress-controller/nginx?ref=develop"
 }
 
 locals {

@@ -1,22 +1,11 @@
 include "root" {
-  path = find_in_parent_folders()
-}
-
-include "aws_ebs_csi_driver" {
-  path   = "${dirname(find_in_parent_folders())}/_common/aws-ebs-csi-driver.hcl"
+  path   = find_in_parent_folders()
   expose = true
 }
 
-dependency "datasources" {
-  config_path = "${get_terragrunt_dir()}/../../data-sources"
-  mock_outputs = {
-    region = "us-east-0"
-    availability_zones = [
-      "us-east1-a",
-      "us-east1-b",
-      "us-east1-c"
-    ]
-  }
+include "docker_registry_secret" {
+  path   = "${dirname(find_in_parent_folders())}/_common/docker-registry-secret.hcl"
+  expose = false
 }
 
 dependency "eks_cluster" {
@@ -41,17 +30,12 @@ generate "eks_providers" {
       cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
       token                  = data.aws_eks_cluster_auth.eks_cluster.token
     }
-
-    provider "helm" {
-      kubernetes {
-        host                   = data.aws_eks_cluster.eks_cluster.endpoint
-        cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
-        token                  = data.aws_eks_cluster_auth.eks_cluster.token
-      }
-    }
 EOF
 }
 
 inputs = {
-
+  docker_registry_username = get_env("TF_VAR_docker_registry_username", "docker_registry_username")
+  docker_registry_password = get_env("TF_VAR_docker_registry_password", "docker_registry_password")
+  docker_registry_server   = get_env("TF_VAR_docker_registry_server",   "docker_registry_server")
+  docker_registry_email    = get_env("TF_VAR_docker_registry_email",    "docker_registry_email")
 }

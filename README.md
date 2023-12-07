@@ -1,11 +1,11 @@
 HELLO-WORLD
 ===
 
-## Architecture
+## 🏠 Architecture
 
 ![img](images/arch.drawio.png)
 
-### Initialization
+### 🖥️ Initialization
 
 ```bash
 cd infrastructure/non-prod/us-east-1/dev
@@ -14,25 +14,11 @@ terragrunt run-all plan -auto-approve
 terragrunt run-all apply -auto-approve
 ```
 
-### Destroy
+### 🖥️ Destroy
 
 ```bash
 cd infrastructure/non-prod/us-east-1/dev
-terragrunt run-all destroy -auto-approve
-```
+terragrunt run-all destroy
 
-### CleanUP
-
-```bash
 find . -type d -name ".terragrunt-cache" -prune -exec rm -rf {} \;
-```
-
-### Update kubeconfig
-
-```
-aws eks update-kubeconfig \
-  --name hello-world-dev \
-  --region us-east-1 \
-  --profile administrator-access-935454902317 \
-  --kubeconfig $HOME/.kube/hello-world-dev
 ```

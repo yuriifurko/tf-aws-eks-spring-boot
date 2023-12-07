@@ -1,11 +1,11 @@
 include "root" {
-  path   = find_in_parent_folders()
+  path = find_in_parent_folders()
   expose = true
 }
 
-include "jenkins" {
-  path   = "${dirname(find_in_parent_folders())}/_common/jenkins.hcl"
-  expose = true
+include "grafana" {
+  path   = "${dirname(find_in_parent_folders())}/_common/grafana.hcl"
+  expose = false
 }
 
 dependency "eks_cluster" {
@@ -13,6 +13,9 @@ dependency "eks_cluster" {
   mock_outputs = {
     eks_cluster_name     = "${include.root.locals.project_name}-${include.root.locals.environment}"
     eks_cluster_endpoint = "https://000000000000.gr7.${include.root.locals.region}.eks.amazonaws.com"
+
+    eks_cluster_identity_oidc_issuer     = "oidc.eks.${include.root.locals.region}.amazonaws.com/id/000000000000"
+    eks_cluster_identity_oidc_issuer_arn = "arn:aws:iam::${include.root.locals.account_id}:oidc-provider/oidc.eks.${include.root.locals.region}.amazonaws.com/id/000000000000"
   }
 }
 
@@ -46,46 +49,39 @@ EOF
 }
 
 inputs = {
-  github_access_token    = get_env("TF_VARgithub_access_token",     "github_access_token")
-  bitbucket_access_token = get_env("TF_VAR_bitbucket_access_token", "bitbucket_access_token")
-  sonarqube_access_token = get_env("TF_VAR_sonarqube_access_token", "sonarqube_access_token")
-  slack_access_token     = get_env("TF_VAR_slack_access_token",     "slack_access_token")
-  argocd_auth_password   = get_env("TF_VAR_argocd_auth_password",   "argocd_auth_password")
-
-  jenkins_saml_enabled = false
+  eks_cluster_name                     = dependency.eks_cluster.outputs.eks_cluster_name
+  eks_cluster_identity_oidc_issuer     = dependency.eks_cluster.outputs.eks_cluster_identity_oidc_issuer
+  eks_cluster_identity_oidc_issuer_arn = dependency.eks_cluster.outputs.eks_cluster_identity_oidc_issuer_arn
 
   values = concat(
     [
       yamlencode({
-        controller = {
-          jenkinsUrl = format("https://%v", "jenkins.${include.root.locals.environment}.${include.root.locals.domain_name}")
-
-
+        grafana = {
+          enabled = true
           ingress = {
             enabled = true
-            ingressClassName = "alb"
             annotations = {
+              "kubernetes.io/ingress.class" = "alb"
+
               "alb.ingress.kubernetes.io/load-balancer-name" = format("%v-lb-controller", dependency.eks_cluster.outputs.eks_cluster_name)
               "alb.ingress.kubernetes.io/group.name"         = format("%v-lb-controller", dependency.eks_cluster.outputs.eks_cluster_name)
               "alb.ingress.kubernetes.io/target-type"        = "ip"
               "alb.ingress.kubernetes.io/scheme"             = "internet-facing"
 
-              "alb.ingress.kubernetes.io/healthcheck-path"     = "/"
-              "alb.ingress.kubernetes.io/healthcheck-protocol" = "HTTP"
+
+              "alb.ingress.kubernetes.io/healthcheck-path"     = "/api/health"
               "alb.ingress.kubernetes.io/success-codes"        = "200,400"
+              "alb.ingress.kubernetes.io/healthcheck-protocol" = "HTTP"
+              "alb.ingress.kubernetes.io/backend-protocol"     = "HTTP"
 
               "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTPS = 443 }])
               "alb.ingress.kubernetes.io/backend-protocol" = "HTTP"
               #"alb.ingress.kubernetes.io/backend-protocol-version" = "HTTP2"
             }
-            hostName = format("%v", "jenkins.${include.root.locals.environment}.${include.root.locals.domain_name}")
+            hosts = [
+              format("%v", "grafana.${include.root.locals.environment}.${include.root.locals.domain_name}")
+            ]
           }
-        }
-
-        persistence = {
-          enabled      = false
-          storageClass = "gp2"
-          size         = "10Gi"
         }
       })
     ]

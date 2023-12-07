@@ -10,6 +10,19 @@ include "eks_cluser_auth" {
 
 dependency "eks_cluster" {
   config_path = "${get_terragrunt_dir()}/../eks-cluster"
+  mock_outputs = {
+    eks_cluster_name     = "${include.root.locals.project_name}-${include.root.locals.environment}"
+    eks_cluster_endpoint = "https://000000000000.gr7.${include.root.locals.region}.eks.amazonaws.com"
+
+    eks_cluster_self_managed_worker_node_iam_role_arn = "arn:aws:iam::000000000000:role/${include.root.locals.project_name}-${include.root.locals.environment}"
+  }
+}
+
+dependency "karpenter" {
+  config_path = "${get_terragrunt_dir()}/../eks-services/karpenter"
+  mock_outputs = {
+    iam_role_arn = "arn:aws:iam::000000000000:role/${include.root.locals.project_name}-${include.root.locals.environment}"
+  }
 }
 
 generate "eks_providers" {
@@ -43,6 +56,7 @@ EOF
 
 inputs = {
   map_roles = []
+
   map_users = [
     {
       userarn  = "arn:aws:iam::${include.root.locals.account_id}:user/yurii.furko"
@@ -61,6 +75,7 @@ inputs = {
   ]
 
   node_iam_role_arns = [
-    try(dependency.eks_cluster.outputs.eks_cluster_self_managed_worker_node_iam_role_arn, null)
+    try(dependency.eks_cluster.outputs.eks_cluster_self_managed_worker_node_iam_role_arn, null),
+    try(dependency.karpenter.outputs.iam_role_arn, null)
   ]
 }

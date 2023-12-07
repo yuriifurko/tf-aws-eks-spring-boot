@@ -1,14 +1,19 @@
 include "root" {
-  path = find_in_parent_folders()
+  path   = find_in_parent_folders()
+  expose = true
 }
 
 include "argocd" {
   path   = "${dirname(find_in_parent_folders())}/_common/argocd.hcl"
-  expose = true
+  expose = false
 }
 
 dependency "eks_cluster" {
   config_path = "${get_terragrunt_dir()}/../../eks-cluster"
+  mock_outputs = {
+    eks_cluster_name     = "${include.root.locals.project_name}-${include.root.locals.environment}"
+    eks_cluster_endpoint = "https://000000000000.gr7.${include.root.locals.region}.eks.amazonaws.com"
+  }
 }
 
 generate "eks_providers" {
@@ -41,14 +46,14 @@ EOF
 }
 
 inputs = {
-  argocd_slack_token = "null"
+  argocd_slack_token = get_env("TF_VAR_argocd_slack_token", "argocd_slack_token")
 
-  auth0_domain        = "dev-ocfok91r.eu.auth0.com"
-  auth0_client_id     = "gKrhS93ttzDohFOiWyO3aOiVdpTfzcG6"
-  auth0_client_secret = "p0CU1ZOpXBY35-y2cUjwNZlnpp1cdT4HEBqCawCqmRIXPcX6rIn_H7wCPHoHzAGV"
+  auth0_domain        = get_env("TF_VAR_auth0_domain",        "auth0_domain")
+  auth0_client_id     = get_env("TF_VAR_auth0_client_id",     "auth0_client_id")
+  auth0_client_secret = get_env("TF_VAR_auth0_client_secret", "auth0_client_secret")
 
   # SSO
-  argocd_sso_domain_name = format("https://%v", "argocd.dev.awsworkshop.info")
+  argocd_sso_domain_name = format("https://%v", "argocd.${include.root.locals.environment}.${include.root.locals.domain_name}")
 
   argocd_server_values = concat(
     [
@@ -60,7 +65,6 @@ inputs = {
 
             # https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#aws-application-load-balancers-albs-and-classic-elb-http-mode
             annotations = {
-              "kubernetes.io/ingress.class"                  = "alb"
               "alb.ingress.kubernetes.io/load-balancer-name" = format("%v-lb-controller", dependency.eks_cluster.outputs.eks_cluster_name)
               "alb.ingress.kubernetes.io/group.name"         = format("%v-lb-controller", dependency.eks_cluster.outputs.eks_cluster_name)
               "alb.ingress.kubernetes.io/target-type"        = "ip"
@@ -70,13 +74,13 @@ inputs = {
               "alb.ingress.kubernetes.io/healthcheck-protocol" = "HTTPS"
               "alb.ingress.kubernetes.io/success-codes"        = "200,400"
 
-              "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTPS = 443 }] )
+              "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTPS = 443 }])
               "alb.ingress.kubernetes.io/backend-protocol" = "HTTPS"
               #"alb.ingress.kubernetes.io/backend-protocol-version" = "HTTP2"
             }
 
             hosts = [
-              format("%v", "argocd.dev.awsworkshop.info")
+              format("%v", "argocd.${include.root.locals.environment}.${include.root.locals.domain_name}")
             ]
             pathType = "Prefix"
             paths = ["/"]

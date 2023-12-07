@@ -4,4 +4,5 @@
 locals {
   project_name = "hello-world"
   environment  = "dev"
+  domain_name  = "awsworkshop.info"
 }

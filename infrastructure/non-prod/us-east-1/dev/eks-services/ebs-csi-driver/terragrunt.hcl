@@ -1,10 +1,11 @@
 include "root" {
   path = find_in_parent_folders()
+  expose = true
 }
 
-include "aws_load_balancer_controller" {
-  path   = "${dirname(find_in_parent_folders())}/_common/aws-lb-ingress-controller.hcl"
-  expose = true
+include "ebs_csi_driver" {
+  path   = "${dirname(find_in_parent_folders())}/_common/ebs-csi-driver.hcl"
+  expose = false
 }
 
 dependency "datasources" {
@@ -19,28 +20,14 @@ dependency "datasources" {
   }
 }
 
-dependency "vpc_network" {
-  config_path = "${get_terragrunt_dir()}/../../vpc-network"
-
-  mock_outputs = {
-    vpc_id         = "vpc-00000000"
-    vpc_cidr_block = "0.0.0.0/0"
-    vpc_public_subnets_id = [
-      "subnet-00000000",
-      "subnet-00000001",
-      "subnet-00000002",
-    ]
-
-    vpc_private_subnets_id = [
-      "subnet-00000000",
-      "subnet-00000001",
-      "subnet-00000002",
-    ]
-  }
-}
-
 dependency "eks_cluster" {
   config_path = "${get_terragrunt_dir()}/../../eks-cluster"
+  mock_outputs = {
+    eks_cluster_name = "${include.root.locals.project_name}-${include.root.locals.environment}"
+
+    eks_cluster_identity_oidc_issuer     = "oidc.eks.${include.root.locals.region}.amazonaws.com/id/000000000000"
+    eks_cluster_identity_oidc_issuer_arn = "arn:aws:iam::${include.root.locals.account_id}:oidc-provider/oidc.eks.${include.root.locals.region}.amazonaws.com/id/000000000000"
+  }
 }
 
 generate "eks_providers" {
@@ -73,15 +60,6 @@ EOF
 }
 
 inputs = {
-  region = dependency.datasources.outputs.region
-  vpc_id = dependency.vpc_network.outputs.vpc_id
-
-  eks_cluster_name                     = dependency.eks_cluster.outputs.eks_cluster_name
   eks_cluster_identity_oidc_issuer     = dependency.eks_cluster.outputs.eks_cluster_identity_oidc_issuer
   eks_cluster_identity_oidc_issuer_arn = dependency.eks_cluster.outputs.eks_cluster_identity_oidc_issuer_arn
-
-  lb_subnets_ids     = dependency.vpc_network.outputs.vpc_public_subnets_id
-  lb_certeficate_arn = "arn:aws:acm:${dependency.datasources.outputs.region}:${dependency.datasources.outputs.account_id}:certificate/715ffc27-2870-4ac7-843b-826819fb6d31"
-
-  lb_ingress_enabled = true
 }

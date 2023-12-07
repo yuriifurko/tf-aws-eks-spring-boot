@@ -1,9 +1,3 @@
-# ---------------------------------------------------------------------------------------------------------------------
-# TERRAGRUNT CONFIGURATION
-# Terragrunt is a thin wrapper for Terraform that provides extra tools for working with multiple Terraform modules,
-# remote state, and locking: https://github.com/gruntwork-io/terragrunt
-# ---------------------------------------------------------------------------------------------------------------------
-
 locals {
   account_vars     = read_terragrunt_config(find_in_parent_folders("account.hcl"))
   region_vars      = read_terragrunt_config(find_in_parent_folders("region.hcl"))
@@ -11,6 +5,7 @@ locals {
 
   project_name = local.environment_vars.locals.project_name
   environment  = local.environment_vars.locals.environment
+  domain_name  = local.environment_vars.locals.domain_name
   profile      = local.account_vars.locals.profile
   account_id   = local.account_vars.locals.account_id
   region       = local.region_vars.locals.region

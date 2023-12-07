@@ -1,5 +1,6 @@
 include "root" {
   path = find_in_parent_folders()
+  expose = true
 }
 
 include "eks_cluster" {
@@ -51,7 +52,7 @@ inputs = {
       subnet_ids = dependency.vpc_network.outputs.vpc_private_subnets_id
 
       instance_types = ["t3a.medium"] # limit 17 pods per node
-      disk_type      = "gp2"
+      disk_type      = "gp3"
       disk_size      = 20
 
       min_size     = 2
@@ -64,7 +65,7 @@ inputs = {
       subnet_ids = dependency.vpc_network.outputs.vpc_private_subnets_id
 
       instance_types = ["t3a.medium"]
-      disk_type      = "gp2"
+      disk_type      = "gp3"
       disk_size      = 20
 
       min_size     = 1

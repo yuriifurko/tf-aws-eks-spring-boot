@@ -1,5 +1,5 @@
 terraform {
-  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/cicd/argocd?ref=develop"
+  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/tf-aws-route53-records.git?ref=master"
 }
 
 locals {

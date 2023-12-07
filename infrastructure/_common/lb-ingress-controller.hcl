@@ -1,6 +1,5 @@
 terraform {
-  #source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/tf-aws-ecr-service.git?ref=master"
-  source = "/Users/yuriifurko/Documents/Cloud/aws/tf-aws-ecr-service"
+  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/aws-load-balancer-controller?ref=develop"
 }
 
 locals {

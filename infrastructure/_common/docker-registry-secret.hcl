@@ -1,6 +1,5 @@
 terraform {
-  #source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/tf-aws-ecr-service.git?ref=master"
-  source = "/Users/yuriifurko/Documents/Cloud/k8s/kubernetes-helm-chart/modules/aws-ebs-csi-driver"
+  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/docker-registry-secret?ref=develop"
 }
 
 locals {

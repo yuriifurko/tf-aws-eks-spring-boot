@@ -4,7 +4,7 @@ include "root" {
 }
 
 include "aws_ecr_repositories" {
-  path   = "${dirname(find_in_parent_folders())}/_common/aws-ecr-repositories.hcl"
+  path   = "${dirname(find_in_parent_folders())}/_common/ecr-repositories.hcl"
   expose = false
 }
 
@@ -51,13 +51,12 @@ inputs = {
   })
 
   manage_registry_scanning_configuration = true
-  registry_scan_type                     = "BASIC"
+  registry_scan_type = "BASIC"
   registry_scan_rules = [
     {
       scan_frequency = "SCAN_ON_PUSH"
       filter         = "*"
       filter_type    = "WILDCARD"
-      }
+    }
   ]
 }
-

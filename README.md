@@ -1,4 +1,4 @@
-HELLO-WORLD
+SIMPLE SPRING-BOOT APPLICATION
 ===
 
 ## 🏠 Architecture

@@ -2,7 +2,7 @@
 # feed forward to the child modules.
 
 locals {
-  project_name = "hello-world"
+  project_name = "spring-boot"
   environment  = "dev"
   domain_name  = "awsworkshop.info"
 }

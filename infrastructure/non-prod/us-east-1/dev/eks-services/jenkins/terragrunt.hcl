@@ -60,7 +60,6 @@ inputs = {
         controller = {
           jenkinsUrl = format("https://%v", "jenkins.${include.root.locals.environment}.${include.root.locals.domain_name}")
 
-
           ingress = {
             enabled          = true
             ingressClassName = "alb"

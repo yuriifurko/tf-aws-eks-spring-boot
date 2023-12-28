@@ -14,21 +14,6 @@ inputs = {
       image_tag_mutability  = "IMMUTABLE"
       scan_on_push          = true
       expiration_after_days = 7
-    },
-    "nginx" = {
-      image_tag_mutability  = "IMMUTABLE"
-      scan_on_push          = true
-      expiration_after_days = 7
-    },
-    "frontend" = {
-      image_tag_mutability  = "IMMUTABLE"
-      scan_on_push          = true
-      expiration_after_days = 3
-    },
-    "backend" = {
-      image_tag_mutability  = "IMMUTABLE"
-      scan_on_push          = true
-      expiration_after_days = 0 # no expiration policy set
     }
   }
 
@@ -36,12 +21,12 @@ inputs = {
     rules = [
       {
         rulePriority = 1,
-        description  = "Keep last 30 images",
+        description  = "Keep last 10 images",
         selection = {
           tagStatus     = "tagged",
           tagPrefixList = ["v"],
           countType     = "imageCountMoreThan",
-          countNumber   = 30
+          countNumber   = 10
         },
         action = {
           type = "expire"

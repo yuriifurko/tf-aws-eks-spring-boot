@@ -40,6 +40,34 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+          env:
+            # https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
+            - name: OTEL_SERVICE_NAME
+              value: "spring-boot"
+
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=spring-boot,compose_service=spring-boot"
+
+            - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+              value: "http://opentelemetry-collector.monitoring:4317"
+
+            - name: OTEL_LOGS_EXPORTER
+              value: "otlp"
+
+            - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+              value: "http://opentelemetry-collector.monitoring:4317"
+
+            - name: OTEL_METRICS_EXPORTER
+              value: "otlp"
+
+            - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+              value: "http://grafana-tempo-distributor.monitoring:4317"
+            - name:  OTEL_TRACES_EXPORTER
+              value: "otlp"
+
+            - name: MANAGEMENT_METRICS_TAGS_APPLICATION
+              value: "spring-boot"
+
           livenessProbe:
             httpGet:
               path: /actuator/health

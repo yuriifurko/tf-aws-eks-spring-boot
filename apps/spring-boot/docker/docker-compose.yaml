@@ -1,8 +1,13 @@
 services:
   web:
-    build: .
+    build: ../app
     ports:
-      - "8080:8080"
+      - "8088:8080"
+    environment:
+      OTEL_SERVICE_NAME: "spring-boot"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://collector:4317"
+      # Logs are disabled by default
+      OTEL_LOGS_EXPORTER: "otlp"
 
   prometheus:
     image: prom/prometheus
@@ -15,3 +20,13 @@ services:
     image: grafana/grafana
     ports:
       - "3000:3000"
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.92.0
+    volumes:
+      - ./collector-spring-native-config.yaml:/collector-spring-native-config.yaml
+    command: ["--config=/collector-spring-native-config.yaml"]
+    expose:
+      - "4317"
+    ports:
+      - "4317:4317"

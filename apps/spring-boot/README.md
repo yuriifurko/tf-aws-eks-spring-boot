@@ -5,17 +5,17 @@ Spring Boot Metrics
 
 ### Check status
 
-```
-curl -sS --location 'http://localhost:8080/actuator/health' | jq
+```bash
+curl -sS --location 'http://localhost:8088/actuator/health' | jq
 
-curl -sS --location 'http://hello-world-dev-lb-controller-1641609581.us-east-1.elb.amazonaws.com/spring-boot/' | jq
+curl -sS --location 'http://spring-boot-dev-lb-controller-1641609581.us-east-1.elb.amazonaws.com/spring-boot/' | jq
 ```
 
 ### Get metrics
 
-```
-curl -sS --location 'http://localhost:8080/actuator/metrics' | jq
-curl -sS --location 'http://localhost:8080/actuator/metrics/process.cpu.usage' | jq
+```bash
+curl -sS --location 'http://localhost:8088/actuator/metrics' | jq
+curl -sS --location 'http://localhost:8088/actuator/metrics/process.cpu.usage' | jq
 ```
 
 ### Grafana Dashboard

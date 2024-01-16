@@ -1,0 +1,33 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - "health"
+          - "metrics"
+          - "prometheus"
+
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+
+  health:
+    probes:
+      enabled: true
+
+  metrics:
+    distribution:
+      percentiles[http.server.requests]: 0.5, 0.90, 0.95, 0.99
+      percentiles-histogram[http.server.requests]: true
+      slo[http.server.requests]: 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s, 30s
+
+      percentiles[http.client.requests]: 0.5, 0.90, 0.95, 0.99
+      percentiles-histogram[http.client.requests]: true
+      slo[http.client.requests]: 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s, 30s
+
+# Add trace_id in log. OpenTelemetry set this value using logger-mdc.
+# https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/logger-mdc-instrumentation.md
+logging:
+  pattern:
+    level: "trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p"

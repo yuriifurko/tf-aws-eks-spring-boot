@@ -5,10 +5,11 @@
 replicaCount: 1
 
 image:
-  repository: 935454902317.dkr.ecr.us-east-1.amazonaws.com/spring-boot
+  #repository: 935454902317.dkr.ecr.us-east-1.amazonaws.com/spring-boot
+  repository: yuriyf/spring-boot-observability
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "1.0.12"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -44,11 +45,11 @@ service:
   port: 8080
 
 ingress:
-  enabled: true
+  enabled: false
   className: "alb"
   annotations:
-    alb.ingress.kubernetes.io/load-balancer-name: "hello-world-dev-lb-controller"
-    alb.ingress.kubernetes.io/group.name:         "hello-world-dev-lb-controller"
+    alb.ingress.kubernetes.io/load-balancer-name: "spring-boot-dev-lb-controller"
+    alb.ingress.kubernetes.io/group.name:         "spring-boot-lb-controller"
     alb.ingress.kubernetes.io/target-type:        "ip"
     alb.ingress.kubernetes.io/scheme:             "internet-facing"
 

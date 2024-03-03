@@ -17,20 +17,23 @@ stages:
 
 fmt:
   extends: .terraform:fmt
+  image: hashicorp/terraform:latest
   needs: []
-  tags: [terraform]
+  tags: [docker]
 
 validate:
   extends: .terraform:validate
+  image: hashicorp/terraform:latest
   needs: []
-  tags: [terraform]
+  tags: [docker]
 
 build:
   extends: .terraform:build
+  image: hashicorp/terraform:latest
   environment:
     name: $TF_STATE_NAME
     action: prepare
-  tags: [terraform]
+  tags: [docker]
 
 deploy:
   extends: .terraform:deploy

@@ -22,6 +22,7 @@ fmt:
 validate:
   extends: .terraform:validate
   needs: []
+  tags: [terraform]
 
 build:
   extends: .terraform:build

@@ -1,5 +1,5 @@
 terraform {
-  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/aws-load-balancer-controller?ref=develop"
+  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/aws-load-balancer-controller?ref=v1.0.4"
 }
 
 locals {

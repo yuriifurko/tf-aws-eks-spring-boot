@@ -3,43 +3,89 @@
 # https://docs.gitlab.com/ee/development/cicd/templates.html
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Terraform.gitlab-ci.yml
-image: docker:latest
 
 include:
   - template: Terraform/Base.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Terraform/Base.gitlab-ci.yml
   - template: Jobs/SAST-IaC.gitlab-ci.yml   # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Jobs/SAST-IaC.gitlab-ci.yml
 
 stages:
+  - authenticate
   - validate
   - test
   - build
   - deploy
   - cleanup
 
+.mng_variables: &mng_variables
+  ACCOUNT_ID: "041356085284"
+  GITLAB_ROLE_NAME: "oidc-provider/gitlab.com"
+
+.aws-login: &aws-login
+  - STS=($(
+      aws sts assume-role-with-web-identity
+        --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+        --role-arn arn:aws:iam::$ACCOUNT_ID:role/$GITLAB_ROLE_NAME
+        --web-identity-token $ID_TOKEN_1
+        --duration-seconds 3600
+        --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]"
+        --output text
+    ));
+  - |
+    export AWS_ACCESS_KEY_ID=${STS[0]};
+    export AWS_SECRET_ACCESS_KEY=${STS[1]};
+    export AWS_SESSION_TOKEN=${STS[2]};
+    export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION;
+
+authenticate:
+  stage: authenticate
+  image:
+    name: amazon/aws-cli:latest
+    entrypoint: [""]
+  id_tokens:
+    ID_TOKEN_1:
+      aud: https://gitlab.com
+  script:
+    - *aws-login
+
 fmt:
   extends: .terraform:fmt
-  image: hashicorp/terraform:latest
   needs: []
   tags: [docker]
 
 validate:
   extends: .terraform:validate
-  image: hashicorp/terraform:latest
   needs: []
   tags: [docker]
 
 build:
   extends: .terraform:build
-  image: hashicorp/terraform:latest
   environment:
     name: $TF_STATE_NAME
     action: prepare
   tags: [docker]
 
-deploy:
+deploy_to_dev:
   extends: .terraform:deploy
   dependencies:
     - build
+  when: manual
   environment:
     name: $TF_STATE_NAME
     action: start
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+  variables:
+    <<: *mng_variables
+
+deploy_to_prod:
+  extends: .terraform:deploy
+  dependencies:
+    - build
+  when: manual
+  environment:
+    name: $TF_STATE_NAME
+    action: start
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+  variables:
+    <<: *mng_variables

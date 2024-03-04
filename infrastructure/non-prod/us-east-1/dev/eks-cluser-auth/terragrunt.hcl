@@ -76,6 +76,7 @@ inputs = {
 
   node_iam_role_arns = [
     try(dependency.eks_cluster.outputs.eks_cluster_self_managed_worker_node_iam_role_arn, null),
-    try(dependency.karpenter.outputs.iam_role_arn, null)
+    try(dependency.karpenter.outputs.iam_role_arn, null),
+    "arn:aws:iam::935454902317:role/spring-boot-dev-self-managed-default-20250707124605198300000003"
   ]
 }

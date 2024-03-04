@@ -49,19 +49,20 @@ spec:
               value: "service.name=spring-boot,compose_service=spring-boot"
 
             - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
-              value: "http://opentelemetry-collector.monitoring:4317"
+              value: "http://opentelemetry-collector.opentelemetry-collector:4317"
 
             - name: OTEL_LOGS_EXPORTER
               value: "otlp"
 
             - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
-              value: "http://opentelemetry-collector.monitoring:4317"
+              value: "http://opentelemetry-collector.opentelemetry-collector:4317"
 
             - name: OTEL_METRICS_EXPORTER
               value: "otlp"
 
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
               value: "http://grafana-tempo-distributor.monitoring:4317"
+
             - name:  OTEL_TRACES_EXPORTER
               value: "otlp"
 

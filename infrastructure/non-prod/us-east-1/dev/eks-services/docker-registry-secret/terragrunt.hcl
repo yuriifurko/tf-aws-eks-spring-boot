@@ -10,6 +10,12 @@ include "docker_registry_secret" {
 
 dependency "eks_cluster" {
   config_path = "${get_terragrunt_dir()}/../../eks-cluster"
+  mock_outputs = {
+    eks_cluster_name     = "${include.root.locals.project_name}-${include.root.locals.environment}"
+    eks_cluster_endpoint = "https://000000000000.gr7.${include.root.locals.region}.eks.amazonaws.com"
+
+    eks_cluster_self_managed_worker_node_iam_role_arn = "arn:aws:iam::000000000000:role/${include.root.locals.project_name}-${include.root.locals.environment}"
+  }
 }
 
 generate "eks_providers" {

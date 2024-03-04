@@ -1,5 +1,5 @@
 terraform {
-  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/tf-aws-vpc-network.git?ref=master"
+  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/tf-aws-vpc-network.git?ref=v1.0.1"
 }
 
 locals {

@@ -81,7 +81,7 @@ EOF
 }
 
 inputs = {
-  region = dependency.datasources.outputs.region
+  region = include.root.locals.region
   vpc_id = dependency.vpc_network.outputs.vpc_id
 
   eks_cluster_name                     = dependency.eks_cluster.outputs.eks_cluster_name
@@ -89,7 +89,7 @@ inputs = {
   eks_cluster_identity_oidc_issuer_arn = dependency.eks_cluster.outputs.eks_cluster_identity_oidc_issuer_arn
 
   lb_subnets_ids     = dependency.vpc_network.outputs.vpc_public_subnets_id
-  lb_certeficate_arn = "arn:aws:acm:${dependency.datasources.outputs.region}:${dependency.datasources.outputs.account_id}:certificate/715ffc27-2870-4ac7-843b-826819fb6d31"
+  lb_certeficate_arn = "arn:aws:acm:${include.root.locals.region}:${include.root.locals.account_id}:certificate/715ffc27-2870-4ac7-843b-826819fb6d31"
 
   lb_ingress_enabled              = true
   lb_default_http_backend_enabled = true

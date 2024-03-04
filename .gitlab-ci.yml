@@ -6,6 +6,7 @@
 image: docker:24.0.5
 services:
   - docker:dind
+  - hashicorp/terraform:latest
 
 include:
   - template: Terraform/Base.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Terraform/Base.gitlab-ci.yml

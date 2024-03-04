@@ -21,25 +21,25 @@ stages:
 
 fmt:
   extends: .terraform:fmt
-  image: 
-    name: hashicorp/terraform:latest
-    entrypoint: [""]
+  # image: 
+  #   name: hashicorp/terraform:latest
+  #   entrypoint: [""]
   needs: []
   tags: [docker]
 
 validate:
   extends: .terraform:validate
-  image: 
-    name: hashicorp/terraform:latest
-    entrypoint: [""]
+  # image: 
+  #   name: hashicorp/terraform:latest
+  #   entrypoint: [""]
   needs: []
   tags: [docker]
 
 build:
   extends: .terraform:build
-  image: 
-    name: hashicorp/terraform:latest
-    entrypoint: [""]
+  # image: 
+  #   name: hashicorp/terraform:latest
+  #   entrypoint: [""]
   environment:
     name: $TF_STATE_NAME
     action: prepare

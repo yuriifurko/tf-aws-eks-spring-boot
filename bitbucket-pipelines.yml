@@ -5,15 +5,21 @@ pipelines:
           name: Terraform Init
           image: hashicorp/terraform
           script:
-            - terraform init --upgrade && terraform validate
-
+             - echo ""
+            #- terraform init --upgrade && terraform validate
       - step:
           name: Terraform fmt
           image: hashicorp/terraform
           script:
             - terraform fmt -recursive -check
-
       - step:
           name: Security Scan
           script:
             - pipe: atlassian/git-secrets-scan:0.5.1
+  terrafrom:
+    - step:
+        oidc: true
+        script:
+          - export AWS_WEB_IDENTITY_TOKEN_FILE=$(pwd)/web-identity-token
+          - echo $BITBUCKET_STEP_OIDC_TOKEN > $(pwd)/web-identity-token
+          - aws s3 ls

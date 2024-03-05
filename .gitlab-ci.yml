@@ -16,15 +16,15 @@ stages:
   - deploy
   - cleanup
 
-.dev_variables: &dev_variables
+.mng_variables: &mng_variables
   ACCOUNT_ID: "041356085284"
-  GITLAB_ROLE_ARN: "arn:aws:iam::041356085284:oidc-provider/gitlab.com"
+  GITLAB_ROLE_NAME: "oidc-provider/gitlab.com"
 
 .aws-login: &aws-login
   - STS=($(
       aws sts assume-role-with-web-identity
         --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
-        --role-arn arn:aws:iam::$ACCOUNT_ID:role/identity_provider_gitlab_assume_role
+        --role-arn arn:aws:iam::$ACCOUNT_ID:role/$GITLAB_ROLE_NAME
         --web-identity-token $ID_TOKEN_1
         --duration-seconds 3600
         --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]"
@@ -49,25 +49,16 @@ authenticate:
 
 fmt:
   extends: .terraform:fmt
-  # image:
-  #   name: hashicorp/terraform:latest
-  #   entrypoint: [""]
   needs: []
   tags: [docker]
 
 validate:
   extends: .terraform:validate
-  # image:
-  #   name: hashicorp/terraform:latest
-  #   entrypoint: [""]
   needs: []
   tags: [docker]
 
 build:
   extends: .terraform:build
-  # image:
-  #   name: hashicorp/terraform:latest
-  #   entrypoint: [""]
   environment:
     name: $TF_STATE_NAME
     action: prepare
@@ -84,7 +75,7 @@ deploy_to_dev:
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
   variables:
-    <<: *dev_variables
+    <<: *mng_variables
 
 deploy_to_prod:
   extends: .terraform:deploy
@@ -97,4 +88,4 @@ deploy_to_prod:
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
   variables:
-    <<: *dev_variables
+    <<: *mng_variables

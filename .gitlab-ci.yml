@@ -3,25 +3,53 @@
 # https://docs.gitlab.com/ee/development/cicd/templates.html
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Terraform.gitlab-ci.yml
-# image: docker:24.0.5
-# services:
-#   - docker:dind
-#   - hashicorp/terraform:latest
 
 include:
   - template: Terraform/Base.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Terraform/Base.gitlab-ci.yml
   - template: Jobs/SAST-IaC.gitlab-ci.yml   # https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Jobs/SAST-IaC.gitlab-ci.yml
 
 stages:
+  - authenticate
   - validate
   - test
   - build
   - deploy
   - cleanup
 
+.dev_variables: &dev_variables
+  ACCOUNT_ID: "041356085284"
+  GITLAB_ROLE_ARN: "arn:aws:iam::041356085284:oidc-provider/gitlab.com"
+
+.aws-login: &aws-login
+  - STS=($(
+      aws sts assume-role-with-web-identity
+        --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+        --role-arn arn:aws:iam::$ACCOUNT_ID:role/identity_provider_gitlab_assume_role
+        --web-identity-token $ID_TOKEN_1
+        --duration-seconds 3600
+        --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]"
+        --output text
+    ));
+  - |
+    export AWS_ACCESS_KEY_ID=${STS[0]};
+    export AWS_SECRET_ACCESS_KEY=${STS[1]};
+    export AWS_SESSION_TOKEN=${STS[2]};
+    export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION;
+
+authenticate:
+  stage: authenticate
+  image:
+    name: amazon/aws-cli:latest
+    entrypoint: [""]
+  id_tokens:
+    ID_TOKEN_1:
+      aud: https://gitlab.com
+  script:
+    - *aws-login
+
 fmt:
   extends: .terraform:fmt
-  # image: 
+  # image:
   #   name: hashicorp/terraform:latest
   #   entrypoint: [""]
   needs: []
@@ -29,7 +57,7 @@ fmt:
 
 validate:
   extends: .terraform:validate
-  # image: 
+  # image:
   #   name: hashicorp/terraform:latest
   #   entrypoint: [""]
   needs: []
@@ -37,7 +65,7 @@ validate:
 
 build:
   extends: .terraform:build
-  # image: 
+  # image:
   #   name: hashicorp/terraform:latest
   #   entrypoint: [""]
   environment:
@@ -45,10 +73,28 @@ build:
     action: prepare
   tags: [docker]
 
-deploy:
+deploy_to_dev:
   extends: .terraform:deploy
   dependencies:
     - build
+  when: manual
   environment:
     name: $TF_STATE_NAME
     action: start
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+  variables:
+    <<: *dev_variables
+
+deploy_to_prod:
+  extends: .terraform:deploy
+  dependencies:
+    - build
+  when: manual
+  environment:
+    name: $TF_STATE_NAME
+    action: start
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+  variables:
+    <<: *dev_variables

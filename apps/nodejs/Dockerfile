@@ -7,4 +7,6 @@ RUN npm install
 COPY . .
 
 EXPOSE 3000
-CMD ["node", "./app.js"]
+CMD ["node", "--require ./instrumentation.js app.js"]
+
+# node --require ./instrumentation.js app.js

@@ -4,5 +4,47 @@ services:
   nodejs:
     build: .
     container_name: nodejs
+    networks:
+      - jaeger
     ports:
       - 3000:3000
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - OTEL_SERVICE_NAME=nodejs
+    depends_on:
+      - jaeger
+
+  hotrod:
+    image: jaegertracing/example-hotrod:latest
+    container_name: hotrod
+    networks:
+      - jaeger
+    ports:
+      - 8080:8080
+      - 8083:8083
+    command: ["-m","prometheus","all"]
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - JAEGER_SAMPLER_TYPE=remote
+      - JAEGER_SAMPLING_ENDPOINT=http://jaeger:5778/sampling
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    networks:
+      - jaeger
+    ports:
+      - "16686:16686" # the jaeger ui
+    expose:
+      - 4317 # the OpenTelemetry collector grpc
+      - 4318
+      - 5778
+      - 6831 # agent
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+networks:
+  jaeger:

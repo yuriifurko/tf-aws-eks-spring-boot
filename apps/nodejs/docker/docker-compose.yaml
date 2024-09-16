@@ -14,23 +14,6 @@ services:
     depends_on:
       - jaeger
 
-  hotrod:
-    image: jaegertracing/example-hotrod:latest
-    container_name: hotrod
-    networks:
-      - jaeger
-    ports:
-      - 8080:8080
-      - 8083:8083
-    command: ["-m","prometheus","all"]
-    environment:
-      - JAEGER_AGENT_HOST=jaeger
-      - JAEGER_AGENT_PORT=6831
-      - JAEGER_SAMPLER_TYPE=remote
-      - JAEGER_SAMPLING_ENDPOINT=http://jaeger:5778/sampling
-    depends_on:
-      - jaeger
-
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: jaeger
@@ -45,6 +28,19 @@ services:
       - 6831 # agent
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+
+  hotrod:
+    image: jaegertracing/example-hotrod:1.36
+    container_name: hotrod
+    command: ["all"]
+    networks:
+      - jaeger
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT="http://jaeger:4318"
+    links:
+      - jaeger
+    depends_on:
+      - jaeger
 
 networks:
   jaeger:

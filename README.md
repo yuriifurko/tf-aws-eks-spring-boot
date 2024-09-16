@@ -9,7 +9,7 @@ SIMPLE SPRING-BOOT APPLICATION
 
 ```bash
 cd infrastructure/non-prod/us-east-1/dev
-terragrunt init --upgrade --reconfigure
+terragrunt run-all init
 terragrunt run-all plan -auto-approve
 terragrunt run-all apply -auto-approve
 ```

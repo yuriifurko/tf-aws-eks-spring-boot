@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "spring-boot.fullname" . }}
+  name: {{ include "helm.fullname" . }}
   labels:
-    {{- include "spring-boot.labels" . | nindent 4 }}
+    {{- include "helm.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "spring-boot.selectorLabels" . | nindent 6 }}
+      {{- include "helm.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,8 +18,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "spring-boot.labels" . | nindent 8 }}
-	{{- with .Values.podLabels }}
+        {{- include "helm.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -27,7 +27,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "spring-boot.serviceAccountName" . }}
+      serviceAccountName: {{ include "helm.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -41,48 +41,35 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           env:
-            # https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
             - name: OTEL_SERVICE_NAME
-              value: "spring-boot"
+              value: "nodejs-app"
 
-            - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "service.name=spring-boot,compose_service=spring-boot"
-
-            - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
-              value: "http://opentelemetry-collector.opentelemetry-collector:4317"
-
-            - name: OTEL_LOGS_EXPORTER
+            - name: OTEL_TRACES_EXPORTER
               value: "otlp"
-
-            - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
-              value: "http://opentelemetry-collector.opentelemetry-collector:4317"
 
             - name: OTEL_METRICS_EXPORTER
               value: "otlp"
 
-            - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-              value: "http://grafana-tempo-distributor.monitoring:4317"
-
-            - name:  OTEL_TRACES_EXPORTER
+            - name: OTEL_LOGS_EXPORTER
               value: "otlp"
 
-            - name: MANAGEMENT_METRICS_TAGS_APPLICATION
-              value: "spring-boot"
+            - name: METRICS_STORAGE_TYPE
+              value: "prometheus"
+
+            - name: PROMETHEUS_SERVER_URL
+              value: "http://kube-prometheus-stack-prometheus.monitoring:9090"
 
           livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: http
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: http
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- with .Values.volumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

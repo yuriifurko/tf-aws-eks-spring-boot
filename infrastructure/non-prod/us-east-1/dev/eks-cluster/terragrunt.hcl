@@ -5,7 +5,14 @@ include "root" {
 
 include "eks_cluster" {
   path   = "${dirname(find_in_parent_folders())}/_common/eks-cluster.hcl"
-  expose = false
+  expose = true
+}
+
+dependency "vpc_cni_irsa" {
+  config_path  = "${get_terragrunt_dir()}/../vpc-cni-irsa"
+  mock_outputs = {
+    iam_role_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  }
 }
 
 dependency "vpc_network" {
@@ -88,5 +95,48 @@ inputs = {
     desired_capacity = 2
     min_size         = 2
     max_size         = 2
+  }
+
+  eks_access_entry_policy = {
+    "devops" = {
+      enabled       = true
+      principal_arn = "arn:aws:iam::935454902317:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_AWSAdministratorAccess_1b22a202a6b807d7"
+      policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+      type          = "STANDARD"
+      user_name     = "AWSAdministratorAccess"
+
+      kubernetes_groups = null
+
+      association_access_scope_type = "cluster"
+    }
+  }
+
+  eks_addons = {
+    "kube-proxy" = {
+      enabled        = true
+      addon_name     = "kube-proxy"
+      addon_version  = "v1.29.1-eksbuild.2"
+    },
+    "coredns" = {
+      enabled        = true
+      addon_name     = "coredns"
+      addon_version  = "v1.11.1-eksbuild.6"
+    },
+    "vpc-cni" = {
+      enabled        = true
+      addon_name     = "vpc-cni"
+      addon_version  = "v1.18.0-eksbuild.1"
+      role_arn       = dependency.vpc_cni_irsa.outputs.iam_role_arn
+
+      configs = jsonencode({
+        env = {
+          # Reference docs
+          # https://docs.aws.amazon.com/eks/latest/userguide/cni-increase-ip-addresses.html
+          # https://aws.amazon.com/blogs/containers/amazon-vpc-cni-increases-pods-per-node-limits/
+          ENABLE_PREFIX_DELEGATION = "true"
+          WARM_PREFIX_TARGET       = "1"
+        }
+      })
+    }
   }
 }

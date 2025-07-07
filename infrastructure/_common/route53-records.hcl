@@ -1,5 +1,5 @@
 terraform {
-  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/tf-aws-route53-records.git?ref=master"
+  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/tf-aws-route53-records.git?ref=v1.0.0"
 }
 
 locals {

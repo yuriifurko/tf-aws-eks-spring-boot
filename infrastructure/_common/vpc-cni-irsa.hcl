@@ -1,5 +1,5 @@
 terraform {
-  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/aws-load-balancer-controller?ref=v1.0.4"
+  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/tf-aws-eks-addons-iam-roles.git?ref=v1.0.0"
 }
 
 locals {
@@ -14,4 +14,8 @@ locals {
   region       = local.region_vars.locals.region
 }
 
-inputs = {}
+inputs = {
+  role_name_prefix      = "vpc-cni-irsa"
+  attach_vpc_cni_policy = true
+  vpc_cni_enable_ipv4   = true
+}

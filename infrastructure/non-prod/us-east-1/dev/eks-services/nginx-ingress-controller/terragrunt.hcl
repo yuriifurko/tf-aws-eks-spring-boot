@@ -1,5 +1,6 @@
 include "root" {
-  path = find_in_parent_folders()
+  path   = find_in_parent_folders()
+  expose = true
 }
 
 include "nginx_ingress_controller" {
@@ -41,6 +42,12 @@ dependency "vpc_network" {
 
 dependency "eks_cluster" {
   config_path = "${get_terragrunt_dir()}/../../eks-cluster"
+  mock_outputs = {
+    eks_cluster_name     = "${include.root.locals.project_name}-${include.root.locals.environment}"
+    eks_cluster_endpoint = "https://000000000000.gr7.${include.root.locals.region}.eks.amazonaws.com"
+
+    eks_cluster_self_managed_worker_node_iam_role_arn = "arn:aws:iam::000000000000:role/${include.root.locals.project_name}-${include.root.locals.environment}"
+  }
 }
 
 generate "eks_providers" {
@@ -81,7 +88,7 @@ inputs = {
 
   lb_nginx_ingress_enabled = false
   lb_subnets_ids           = dependency.vpc_network.outputs.vpc_public_subnets_id
-  lb_certeficate_arn       = "arn:aws:acm:${dependency.datasources.outputs.region}:${dependency.datasources.outputs.account_id}:certificate/715ffc27-2870-4ac7-843b-826819fb6d31"
+  lb_certeficate_arn       = "arn:aws:acm:${include.root.locals.region}:${include.root.locals.account_id}:certificate/715ffc27-2870-4ac7-843b-826819fb6d31"
 
   values = concat(
     [

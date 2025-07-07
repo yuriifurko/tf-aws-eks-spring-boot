@@ -3,5 +3,5 @@
 
 locals {
   account_id = "935454902317"
-  profile    = "administrator-access-935454902317"
+  profile    = "dev-administrator-access"
 }

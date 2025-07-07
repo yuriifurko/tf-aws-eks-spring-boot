@@ -1,5 +1,5 @@
 terraform {
-  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/ingress-controller/nginx?ref=develop"
+  source = "git::ssh://yurii-furko@bitbucket.org/yuriyfRnD/kubernetes-helm-chart.git//modules/ingress-controller/nginx?ref=v1.0.4"
 }
 
 locals {

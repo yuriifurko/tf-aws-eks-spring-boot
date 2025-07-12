@@ -81,20 +81,23 @@ inputs = {
     }
   }
 
-  # required aws-auth module
+  # required aws-auth module for aws-cli
   self_managed_node_group_enabled = true
-  self_managed_node_group = {
-    name = "default"
+  self_managed_node_groups = {
+    "default" = {
+      enabled = true
+      name    = "self-managed-default"
 
-    vpc_zone_identifier = dependency.vpc_network.outputs.vpc_private_subnets_id
+      instance_type = "t3a.medium"
+      disk_type     = "gp3"
+      disk_size     = 20
 
-    instance_type = "t3a.medium" # limit 110 pods per node
-    disk_type     = "gp3"
-    disk_size     = 20
+      vpc_zone_identifier = dependency.vpc_network.outputs.vpc_private_subnets_id
 
-    desired_capacity = 2
-    min_size         = 2
-    max_size         = 2
+      desired_capacity = 3
+      min_size         = 3
+      max_size         = 3
+    }
   }
 
   eks_access_entry_policy = {
@@ -115,18 +118,18 @@ inputs = {
     "kube-proxy" = {
       enabled        = true
       addon_name     = "kube-proxy"
-      addon_version  = "v1.29.1-eksbuild.2"
+      addon_version  = "v1.32.5-eksbuild.2"
     },
     "coredns" = {
       enabled        = true
       addon_name     = "coredns"
-      addon_version  = "v1.11.1-eksbuild.6"
+      addon_version  = "v1.11.4-eksbuild.14"
     },
     "vpc-cni" = {
       enabled        = true
       addon_name     = "vpc-cni"
-      addon_version  = "v1.18.0-eksbuild.1"
-      role_arn       = dependency.vpc_cni_irsa.outputs.iam_role_arn
+      addon_version  = "v1.19.6-eksbuild.1"
+      role_arn       = try(dependency.vpc_cni_irsa.outputs.iam_role_arn, null)
 
       configs = jsonencode({
         env = {

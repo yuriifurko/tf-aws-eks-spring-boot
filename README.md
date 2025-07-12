@@ -86,9 +86,25 @@ Before starting, ensure you have the following:
 
 ```bash
 cd infrastructure/non-prod/us-east-1/dev
-terragrunt init --all
+terragrunt init --all -upgrade
 terragrunt plan --all
+
+terragrunt apply --terragrunt-working-dir ../../us-east-1/dev/data-sources
+terragrunt apply --terragrunt-working-dir ../../us-east-1/dev/eks-cluster
+
 terragrunt apply --all -auto-approve
+```
+
+### Check access to Kubernets
+
+```bash
+aws eks update-kubeconfig \
+  --name spring-boot-dev \
+  --region us-east-1 \
+  --profile dev-administrator-access \
+  --kubeconfig $HOME/.kube/spring-boot-dev-dev-administrator-access
+
+export KUBECONFIG=$KUBECONFIG:$HOME/.kube/spring-boot-dev-dev-administrator-access
 ```
 
 ### 🖥️ Destroy

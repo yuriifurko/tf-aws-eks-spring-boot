@@ -16,14 +16,14 @@ SIMPLE SPRING-BOOT APPLICATION
 
 ## 🎯 Project Overview
 
-This project implements a complete GitOps workflow on AWS with automated infrastructure provisioning, continuous integration/deployment, and comprehensive monitoring. The application is a Python Django web application with MySQL database, deployed on Amazon EKS with persistent storage using EFS.
+This project implements a complete GitOps workflow on AWS with automated infrastructure provisioning, continuous integration/deployment, and comprehensive monitoring.
+The application is a JAVA web application, deployed on Amazon EKS.
 
 ### Key Features:
 - **Infrastructure as Code**: Complete AWS infrastructure managed with Terraform
 - **CI/CD Pipeline**: Jenkins automated build and deployment pipeline
 - **GitOps Workflow**: ArgoCD for Kubernetes deployment automation
 - **Container Orchestration**: Kubernetes with EKS for scalable deployments
-- **Persistent Storage**: EFS-backed storage for database and application data
 - **Load Balancing**: AWS ALB with SSL termination via ACM
 - **Monitoring**: Prometheus metrics collection with Grafana visualization
 - **Security**: RBAC, secrets management, and network security groups
@@ -115,28 +115,3 @@ terragrunt run-all destroy
 
 find . -type d -name ".terragrunt-cache" -prune -exec rm -rf {} \;
 ```
-<!-- BEGIN_TF_DOCS -->
-## Requirements
-
-No requirements.
-
-## Providers
-
-No providers.
-
-## Modules
-
-No modules.
-
-## Resources
-
-No resources.
-
-## Inputs
-
-No inputs.
-
-## Outputs
-
-No outputs.
-<!-- END_TF_DOCS -->

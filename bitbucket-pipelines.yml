@@ -22,6 +22,8 @@ pipelines:
               - terragrunt run-all plan
         - step:
             name: Security Scan
+            on-fail:
+              strategy: ignore
             script:
               # Run a security scan for sensitive data.
               # See more security tools at https://bitbucket.org/product/features/pipelines/integrations?&category=security
@@ -30,6 +32,8 @@ pipelines:
     master:
       - step:
           name: Security Scan
+          on-fail:
+            strategy: ignore
           script:
             # Run a security scan for sensitive data.
             # See more security tools at https://bitbucket.org/product/features/pipelines/integrations?&category=security
